@@ -1,0 +1,148 @@
+-- DCC011 - TP Enamed 2025
+-- DDL do banco (SQLite), modelo normalizado
+
+
+PRAGMA foreign_keys = ON;
+
+
+-- drop em ordem inversa pra poder recriar do zero
+DROP TABLE IF EXISTS Resposta;
+DROP TABLE IF EXISTS Composicao;
+DROP TABLE IF EXISTS Estudante;
+DROP TABLE IF EXISTS Vetores;
+DROP TABLE IF EXISTS Notas;
+DROP TABLE IF EXISTS Item_prova;
+DROP TABLE IF EXISTS Caderno;
+DROP TABLE IF EXISTS Curso;
+DROP TABLE IF EXISTS IES;
+DROP TABLE IF EXISTS Municipio;
+DROP TABLE IF EXISTS UF;
+
+
+CREATE TABLE UF (
+    CO_UF   INTEGER PRIMARY KEY,
+    NOME    TEXT NOT NULL,
+    REGIAO  TEXT NOT NULL
+            CHECK (REGIAO IN ('Norte', 'Nordeste', 'Sudeste', 'Sul', 'Centro-Oeste'))
+);
+
+
+CREATE TABLE Municipio (
+    CO_MUNICIPIO  INTEGER PRIMARY KEY,
+    NOME          TEXT NOT NULL,
+    IDH           REAL,
+    CO_UF         INTEGER NOT NULL,
+    FOREIGN KEY (CO_UF) REFERENCES UF(CO_UF)
+);
+
+
+CREATE TABLE IES (
+    CO_IES      INTEGER PRIMARY KEY,
+    CO_CATEGAD  INTEGER,
+    CO_ORGACAD  INTEGER
+);
+
+
+CREATE TABLE Curso (
+    CO_CURSO       INTEGER PRIMARY KEY,
+    MODALIDADE     TEXT,
+    QTD_VAGAS      INTEGER,
+    CO_IES         INTEGER NOT NULL,
+    CO_MUNICIPIO   INTEGER NOT NULL,
+    FOREIGN KEY (CO_IES)        REFERENCES IES(CO_IES),
+    FOREIGN KEY (CO_MUNICIPIO)  REFERENCES Municipio(CO_MUNICIPIO)
+);
+
+
+CREATE TABLE Caderno (
+    CO_CADERNO   INTEGER PRIMARY KEY,
+    NU_ITEM      INTEGER,
+    NU_ITEM_X    INTEGER,
+    NU_ITEM_Z    INTEGER
+);
+
+
+CREATE TABLE Item_prova (
+    CO_ITEM         INTEGER PRIMARY KEY,
+    OUTFIT          REAL,
+    INFIT           REAL,
+    COR_BISSERIAL   REAL,
+    PARAMETRO_B     REAL,
+    ITEM_MANTIDO    INTEGER CHECK (ITEM_MANTIDO IN (0, 1))
+);
+
+
+CREATE TABLE Notas (
+    CO_NOTA            INTEGER PRIMARY KEY,
+    QT_ACERTO_A_1      INTEGER,
+    QT_ACERTO_A_2      INTEGER,
+    QT_ACERTO_A_3      INTEGER,
+    QT_ACERTO_A_4      INTEGER,
+    QT_ACERTO_A_5      INTEGER,
+    PROFICIENCIA       REAL,
+    NT_GER             REAL,
+    PER_ACERTO_ENARE   REAL
+);
+
+
+CREATE TABLE Vetores (
+    CO_VETOR        INTEGER PRIMARY KEY,
+    NU_ANO          INTEGER,
+    DS_VT_GAB_OBJ   TEXT,   -- gabarito
+    DS_VT_ACE_OBJ   TEXT,   -- acertos
+    DS_VT_ESC_OBJ   TEXT    -- escolha do estudante
+);
+
+
+-- UNIQUE em CO_NOTA e CO_VETOR pra garantir a 1:1
+CREATE TABLE Estudante (
+    CO_ESTUDANTE    INTEGER PRIMARY KEY,
+    TP_INSCRICAO    TEXT,
+    TP_SEXO         TEXT,
+    NU_IDADE        INTEGER,
+    ANO_FIM_EM      INTEGER,
+    ANO_IN_GRAD     INTEGER,
+    CO_TURNO_GRAD   INTEGER,
+    TP_PR_GER       TEXT,
+    CO_CURSO        INTEGER NOT NULL,
+    CO_CADERNO      INTEGER NOT NULL,
+    CO_NOTA         INTEGER NOT NULL UNIQUE,
+    CO_VETOR        INTEGER NOT NULL UNIQUE,
+    FOREIGN KEY (CO_CURSO)    REFERENCES Curso(CO_CURSO),
+    FOREIGN KEY (CO_CADERNO)  REFERENCES Caderno(CO_CADERNO),
+    FOREIGN KEY (CO_NOTA)     REFERENCES Notas(CO_NOTA),
+    FOREIGN KEY (CO_VETOR)    REFERENCES Vetores(CO_VETOR)
+);
+
+
+-- M:N
+CREATE TABLE Composicao (
+    CO_CADERNO   INTEGER NOT NULL,
+    CO_ITEM      INTEGER NOT NULL,
+    POSICAO      INTEGER,
+    PRIMARY KEY (CO_CADERNO, CO_ITEM),
+    FOREIGN KEY (CO_CADERNO) REFERENCES Caderno(CO_CADERNO),
+    FOREIGN KEY (CO_ITEM)    REFERENCES Item_prova(CO_ITEM)
+);
+
+
+-- M:N
+CREATE TABLE Resposta (
+    CO_VETOR              INTEGER NOT NULL,
+    CO_ITEM               INTEGER NOT NULL,
+    ALTERNATIVA_MARCADA   TEXT,
+    ACERTO                INTEGER CHECK (ACERTO IN (0, 1)),
+    STATUS                TEXT,
+    PRIMARY KEY (CO_VETOR, CO_ITEM),
+    FOREIGN KEY (CO_VETOR) REFERENCES Vetores(CO_VETOR),
+    FOREIGN KEY (CO_ITEM)  REFERENCES Item_prova(CO_ITEM)
+);
+
+
+-- índices pros JOINs mais usados
+CREATE INDEX IF NOT EXISTS idx_municipio_uf       ON Municipio(CO_UF);
+CREATE INDEX IF NOT EXISTS idx_curso_ies          ON Curso(CO_IES);
+CREATE INDEX IF NOT EXISTS idx_curso_municipio    ON Curso(CO_MUNICIPIO);
+CREATE INDEX IF NOT EXISTS idx_estudante_curso    ON Estudante(CO_CURSO);
+CREATE INDEX IF NOT EXISTS idx_estudante_caderno  ON Estudante(CO_CADERNO);
+CREATE INDEX IF NOT EXISTS idx_resposta_item      ON Resposta(CO_ITEM);
