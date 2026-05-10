@@ -24,7 +24,7 @@ Formação Médica), divulgados pelo INEP em janeiro de 2026.
 ### 2. Clonar o repositório
 
 ```bash
-git clone <url-do-repo>
+git clone <git@github.com:marco-fabian/tp-bd-enamed.git>
 cd tp-bd-enamed
 ```
 
