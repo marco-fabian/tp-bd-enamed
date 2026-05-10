@@ -1,0 +1,63 @@
+# ===========================================
+# Python
+# ===========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ===========================================
+# Jupyter
+# ===========================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===========================================
+# Dados grandes do Enamed (não comitar)
+# ===========================================
+data/raw/
+data/extracted/
+data/processed/
+*.csv
+*.zip
+*.tar.gz
+*.parquet
+
+# SQL com dados (grandes, gerados pelo ETL)
+sql/02_load_data.sql
+
+# ===========================================
+# Variáveis de ambiente e segredos
+# ===========================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ===========================================
+# IDEs / editores
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===========================================
+# Logs e temporários
+# ===========================================
+*.log
+*.tmp
+*.bak
+*.backup
+
