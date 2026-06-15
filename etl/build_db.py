@@ -189,7 +189,7 @@ def main(com_resposta=False):
             vetores.append((idx, num(d["NU_ANO"]),
                             d["DS_VT_GAB_OBJ"], d["DS_VT_ACE_OBJ"], d["DS_VT_ESC_OBJ"]))
             estudantes.append((idx, "1", None, None, None, None, None,
-                               d["TP_PRES"].strip() or None, co_curso, cad, idx, idx))
+                               (d["TP_PR_GER"] or "").strip() or None, co_curso, cad, idx, idx))
 
     con.executemany("INSERT INTO Caderno VALUES (?,?,?,?)",
                     [(c, ni, nx, nz) for c, (ni, nx, nz) in cadernos.items()])
