@@ -5,7 +5,6 @@ import streamlit as st
 
 st.set_page_config(page_title="Enamed 2025", layout="wide")
 
-
 def achar_raiz():
     root = os.getcwd()
     while not os.path.exists(os.path.join(root, "sql", "01_create_tables.sql")):
@@ -15,10 +14,8 @@ def achar_raiz():
         root = parent
     return root
 
-
 ROOT = achar_raiz()
 DB = os.path.join(ROOT, "data", "processed", "enamed.db")
-
 
 @st.cache_resource
 def conectar():
@@ -26,9 +23,7 @@ def conectar():
         os.system(f"cd {ROOT} && python etl/seed.py")
     return sqlite3.connect(DB, check_same_thread=False)
 
-
 con = conectar()
-
 
 @st.cache_data
 def run(sql, params=None):
@@ -41,24 +36,22 @@ with st.sidebar:
         "Seção",
         [
             "Visão geral",
-            "6.1.1  Idade dos estudantes",
-            "6.1.2  Cursos por vagas",
-            "6.2.1  Municípios por região",
-            "6.2.2  Proficiência",
-            "6.2.3  Cursos × IDH",
-            "6.3.1  Curso × IES",
-            "6.3.2  Nota geral por região",
-            "6.3.3  Itens dos cadernos",
-            "6.4.1  Estudantes por município",
-            "6.4.2  Proficiência por região",
+            "6.1.1 Notas altas (NT_GER)",
+            "6.1.2 Itens da prova (TRI)",
+            "6.2.1 Municípios por região",
+            "6.2.2 Proficiência",
+            "6.2.3 Curso × município",
+            "6.3.1 Estudante × IES",
+            "6.3.2 Nota geral por região",
+            "6.3.3 Itens dos cadernos",
+            "6.4.1 Estudantes por município",
+            "6.4.2 Proficiência por região",
         ],
     )
-
 
 def mostra_sql(sql):
     with st.expander("Ver comando SQL"):
         st.code(sql.strip(), language="sql")
-
 
 if pagina == "Visão geral":
     tabelas = ["UF", "Municipio", "IES", "Curso", "Caderno", "Item_prova",
@@ -72,32 +65,36 @@ if pagina == "Visão geral":
         st.dataframe(cont, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.1.1"):
-    st.subheader("6.1.1   Idade dos estudantes")
-    st.write("Estudantes acima de uma idade mínima (seleção + projeção).")
-    idade = st.slider("Idade mínima", 18, 60, 25)
-    df = run("SELECT CO_ESTUDANTE, NU_IDADE FROM Estudante WHERE NU_IDADE > ? ORDER BY NU_IDADE DESC",
-             params=(idade,))
-    mostra_sql(f"SELECT CO_ESTUDANTE, NU_IDADE\nFROM Estudante\nWHERE NU_IDADE > {idade};")
-    st.metric("Estudantes encontrados", len(df))
+    st.subheader("6.1.1 — Notas gerais altas")
+    st.write("Participantes com nota geral (NT_GER) acima de um corte (seleção + projeção).")
+    corte = st.slider("Nota geral mínima", 0, 100, 70, step=5)
+    df = run("SELECT CO_NOTA, NT_GER FROM Notas WHERE NT_GER >= ? ORDER BY NT_GER DESC",
+             params=(corte,))
+    mostra_sql(f"SELECT CO_NOTA, NT_GER\nFROM Notas\nWHERE NT_GER >= {corte}\nORDER BY NT_GER DESC;")
+    st.metric("Participantes encontrados", len(df))
     c1, c2 = st.columns([1, 2])
     with c1:
         st.dataframe(df, hide_index=True, use_container_width=True, height=380)
     with c2:
-        dist = df["NU_IDADE"].value_counts().sort_index()
+        todas = run("SELECT NT_GER FROM Notas WHERE NT_GER IS NOT NULL")
+        dist = pd.cut(todas["NT_GER"], bins=range(0, 105, 5)).value_counts().sort_index()
+        dist.index = dist.index.astype(str)
         st.bar_chart(dist, height=380)
 
 elif pagina.startswith("6.1.2"):
-    st.subheader("6.1.2   Cursos por nº de vagas")
-    modalidade = st.selectbox("Modalidade", ["Presencial", "EAD"])
-    minvagas = st.slider("Mínimo de vagas", 0, 120, 80, step=10)
-    sql = ("SELECT CO_CURSO, QTD_VAGAS, MODALIDADE FROM Curso "
-           "WHERE MODALIDADE = ? AND QTD_VAGAS >= ? ORDER BY QTD_VAGAS DESC")
-    df = run(sql, params=(modalidade, minvagas))
-    mostra_sql(f"SELECT CO_CURSO, QTD_VAGAS\nFROM Curso\nWHERE MODALIDADE = '{modalidade}'\n  AND QTD_VAGAS >= {minvagas};")
+    st.subheader("6.1.2 — Itens da prova (parâmetros da TRI)")
+    st.write("Itens mantidos no cálculo e mais fáceis (PARAMETRO_B < 0) — seleção com 2 condições.")
+    so_mantidos = st.checkbox("Apenas itens mantidos (ITEM_MANTIDO = 1)", value=True)
+    bmax = st.slider("PARAMETRO_B máximo (dificuldade)", -4.0, 4.0, 0.0, step=0.5)
+    cond = "ITEM_MANTIDO = 1 AND " if so_mantidos else ""
+    sql = f"SELECT CO_ITEM, PARAMETRO_B, ITEM_MANTIDO FROM Item_prova WHERE {cond}PARAMETRO_B < ? ORDER BY PARAMETRO_B"
+    df = run(sql, params=(bmax,))
+    mostra_sql(f"SELECT CO_ITEM, PARAMETRO_B\nFROM Item_prova\nWHERE {('ITEM_MANTIDO = 1 AND ' if so_mantidos else '')}PARAMETRO_B < {bmax}\nORDER BY PARAMETRO_B;")
+    st.metric("Itens encontrados", len(df))
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.2.1"):
-    st.subheader("6.2.1   Municípios por região (junção 2 relações)")
+    st.subheader("6.2.1 — Municípios por região (junção 2 relações)")
     regiao = st.selectbox("Região", ["Sudeste", "Sul", "Nordeste", "Norte", "Centro-Oeste"])
     sql = ("SELECT M.NOME AS MUNICIPIO, U.NOME AS UF, U.REGIAO "
            "FROM Municipio M JOIN UF U ON M.CO_UF = U.CO_UF WHERE U.REGIAO = ?")
@@ -106,8 +103,8 @@ elif pagina.startswith("6.2.1"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.2.2"):
-    st.subheader("6.2.2   Proficiência dos estudantes (junção 2 relações)")
-    corte = st.slider("Proficiência mínima (TRI)", 300, 800, 600, step=10)
+    st.subheader("6.2.2 — Proficiência dos estudantes (junção 2 relações)")
+    corte = st.slider("Proficiência mínima (theta TRI)", -4.0, 2.5, 1.5, step=0.1)
     sql = ("SELECT E.CO_ESTUDANTE, N.PROFICIENCIA FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA WHERE N.PROFICIENCIA > ? "
            "ORDER BY N.PROFICIENCIA DESC")
@@ -117,30 +114,33 @@ elif pagina.startswith("6.2.2"):
     st.dataframe(df, hide_index=True, use_container_width=True, height=360)
 
 elif pagina.startswith("6.2.3"):
-    st.subheader("6.2.3   Cursos × IDH do município (junção 2 relações)")
-    sql = ("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO, M.IDH FROM Curso C "
-           "JOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO ORDER BY M.IDH DESC")
+    st.subheader("6.2.3 — Curso × município (junção 2 relações)")
+    st.write("Para cada curso, o município onde funciona.")
+    sql = ("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO FROM Curso C "
+           "JOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO ORDER BY M.NOME")
     df = run(sql)
-    mostra_sql("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO, M.IDH\nFROM Curso C\nJOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO\nORDER BY M.IDH DESC;")
+    mostra_sql("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO\nFROM Curso C\nJOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO\nORDER BY M.NOME;")
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.3.1"):
-    st.subheader("6.3.1   Estudante × curso × IES (junção 3 relações)")
-    sql = ("SELECT E.CO_ESTUDANTE, C.MODALIDADE, I.CO_CATEGAD FROM Estudante E "
+    st.subheader("6.3.1 — Estudante × curso × IES (junção 3 relações)")
+    st.write("Para cada estudante, categoria administrativa e organização acadêmica da IES.")
+    sql = ("SELECT E.CO_ESTUDANTE, I.CO_CATEGAD, I.CO_ORGACAD FROM Estudante E "
            "JOIN Curso C ON E.CO_CURSO = C.CO_CURSO JOIN IES I ON C.CO_IES = I.CO_IES")
     df = run(sql)
-    mostra_sql("SELECT E.CO_ESTUDANTE, C.MODALIDADE, I.CO_CATEGAD\nFROM Estudante E\nJOIN Curso C ON E.CO_CURSO = C.CO_CURSO\nJOIN IES I ON C.CO_IES = I.CO_IES;")
+    mostra_sql("SELECT E.CO_ESTUDANTE, I.CO_CATEGAD, I.CO_ORGACAD\nFROM Estudante E\nJOIN Curso C ON E.CO_CURSO = C.CO_CURSO\nJOIN IES I ON C.CO_IES = I.CO_IES;")
     c1, c2 = st.columns(2)
     with c1:
-        st.write("Por modalidade")
-        st.bar_chart(df["MODALIDADE"].value_counts())
-    with c2:
-        st.write("Por categoria administrativa da IES")
+        st.write("Por categoria administrativa")
         st.bar_chart(df["CO_CATEGAD"].value_counts().sort_index())
+    with c2:
+        st.write("Por organização acadêmica")
+        st.bar_chart(df["CO_ORGACAD"].value_counts().sort_index())
     st.dataframe(df, hide_index=True, use_container_width=True, height=300)
 
 elif pagina.startswith("6.3.2"):
-    st.subheader("6.3.2   Nota geral por região (junção 5 relações)")
+    st.divider()
+    st.subheader("6.3.2 — Nota geral por região (junção 5 relações)")
     sql = ("SELECT E.CO_ESTUDANTE, U.REGIAO, N.NT_GER FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA "
            "JOIN Curso C ON E.CO_CURSO = C.CO_CURSO "
@@ -153,7 +153,7 @@ elif pagina.startswith("6.3.2"):
     st.dataframe(df, hide_index=True, use_container_width=True, height=260)
 
 elif pagina.startswith("6.3.3"):
-    st.subheader("6.3.3   Itens dos cadernos (junção 3 relações)")
+    st.subheader("6.3.3 — Itens dos cadernos (junção 3 relações)")
     sql = ("SELECT CD.CO_CADERNO, I.CO_ITEM, CO.POSICAO, I.PARAMETRO_B "
            "FROM Caderno CD JOIN Composicao CO ON CD.CO_CADERNO = CO.CO_CADERNO "
            "JOIN Item_prova I ON CO.CO_ITEM = I.CO_ITEM ORDER BY CD.CO_CADERNO, CO.POSICAO")
@@ -162,26 +162,26 @@ elif pagina.startswith("6.3.3"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.4.1"):
-    st.subheader("6.4.1   Estudantes por município (agregação sobre junção)")
+    st.subheader("6.4.1 — Estudantes por município (agregação sobre junção)")
     sql = ("SELECT M.NOME AS MUNICIPIO, COUNT(E.CO_ESTUDANTE) AS TOTAL_ESTUDANTES "
            "FROM Municipio M JOIN Curso C ON M.CO_MUNICIPIO = C.CO_MUNICIPIO "
            "JOIN Estudante E ON C.CO_CURSO = E.CO_CURSO "
-           "GROUP BY M.NOME ORDER BY TOTAL_ESTUDANTES DESC")
+           "GROUP BY M.NOME ORDER BY TOTAL_ESTUDANTES DESC LIMIT 15")
     df = run(sql)
-    mostra_sql("SELECT M.NOME AS MUNICIPIO, COUNT(E.CO_ESTUDANTE) AS TOTAL_ESTUDANTES\nFROM Municipio M\nJOIN Curso C ON M.CO_MUNICIPIO = C.CO_MUNICIPIO\nJOIN Estudante E ON C.CO_CURSO = E.CO_CURSO\nGROUP BY M.NOME\nORDER BY TOTAL_ESTUDANTES DESC;")
+    mostra_sql("SELECT M.NOME AS MUNICIPIO, COUNT(E.CO_ESTUDANTE) AS TOTAL_ESTUDANTES\nFROM Municipio M\nJOIN Curso C ON M.CO_MUNICIPIO = C.CO_MUNICIPIO\nJOIN Estudante E ON C.CO_CURSO = E.CO_CURSO\nGROUP BY M.NOME\nORDER BY TOTAL_ESTUDANTES DESC\nLIMIT 15;")
     st.bar_chart(df.set_index("MUNICIPIO"), height=400)
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.4.2"):
-    st.subheader("6.4.2   Proficiência média por região (agregação sobre junção)")
+    st.subheader("6.4.2 — Proficiência média por região (agregação sobre junção)")
     sql = ("SELECT U.REGIAO, COUNT(E.CO_ESTUDANTE) AS TOTAL, "
-           "ROUND(AVG(N.PROFICIENCIA),1) AS PROF_MEDIA FROM Estudante E "
+           "ROUND(AVG(N.PROFICIENCIA),3) AS PROF_MEDIA FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA "
            "JOIN Curso C ON E.CO_CURSO = C.CO_CURSO "
            "JOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO "
            "JOIN UF U ON M.CO_UF = U.CO_UF GROUP BY U.REGIAO ORDER BY PROF_MEDIA DESC")
     df = run(sql)
-    mostra_sql("SELECT U.REGIAO, COUNT(E.CO_ESTUDANTE) AS TOTAL,\n       ROUND(AVG(N.PROFICIENCIA),1) AS PROF_MEDIA\nFROM Estudante E\nJOIN Notas N ON E.CO_NOTA = N.CO_NOTA\nJOIN Curso C ON E.CO_CURSO = C.CO_CURSO\nJOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO\nJOIN UF U ON M.CO_UF = U.CO_UF\nGROUP BY U.REGIAO\nORDER BY PROF_MEDIA DESC;")
+    mostra_sql("SELECT U.REGIAO, COUNT(E.CO_ESTUDANTE) AS TOTAL,\n       ROUND(AVG(N.PROFICIENCIA),3) AS PROF_MEDIA\nFROM Estudante E\nJOIN Notas N ON E.CO_NOTA = N.CO_NOTA\nJOIN Curso C ON E.CO_CURSO = C.CO_CURSO\nJOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO\nJOIN UF U ON M.CO_UF = U.CO_UF\nGROUP BY U.REGIAO\nORDER BY PROF_MEDIA DESC;")
     c1, c2 = st.columns(2)
     with c1:
         st.bar_chart(df.set_index("REGIAO")["PROF_MEDIA"], height=360)
