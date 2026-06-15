@@ -65,7 +65,7 @@ if pagina == "Visão geral":
         st.dataframe(cont, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.1.1"):
-    st.subheader("6.1.1 — Notas gerais altas")
+    st.subheader("6.1.1 Notas gerais altas")
     st.write("Participantes com nota geral (NT_GER) acima de um corte (seleção + projeção).")
     corte = st.slider("Nota geral mínima", 0, 100, 70, step=5)
     df = run("SELECT CO_NOTA, NT_GER FROM Notas WHERE NT_GER >= ? ORDER BY NT_GER DESC",
@@ -82,7 +82,7 @@ elif pagina.startswith("6.1.1"):
         st.bar_chart(dist, height=380)
 
 elif pagina.startswith("6.1.2"):
-    st.subheader("6.1.2 — Itens da prova (parâmetros da TRI)")
+    st.subheader("6.1.2 Itens da prova (parâmetros da TRI)")
     st.write("Itens mantidos no cálculo e mais fáceis (PARAMETRO_B < 0) — seleção com 2 condições.")
     so_mantidos = st.checkbox("Apenas itens mantidos (ITEM_MANTIDO = 1)", value=True)
     bmax = st.slider("PARAMETRO_B máximo (dificuldade)", -4.0, 4.0, 0.0, step=0.5)
@@ -94,7 +94,7 @@ elif pagina.startswith("6.1.2"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.2.1"):
-    st.subheader("6.2.1 — Municípios por região (junção 2 relações)")
+    st.subheader("6.2.1 Municípios por região (junção 2 relações)")
     regiao = st.selectbox("Região", ["Sudeste", "Sul", "Nordeste", "Norte", "Centro-Oeste"])
     sql = ("SELECT M.NOME AS MUNICIPIO, U.NOME AS UF, U.REGIAO "
            "FROM Municipio M JOIN UF U ON M.CO_UF = U.CO_UF WHERE U.REGIAO = ?")
@@ -103,7 +103,7 @@ elif pagina.startswith("6.2.1"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.2.2"):
-    st.subheader("6.2.2 — Proficiência dos estudantes (junção 2 relações)")
+    st.subheader("6.2.2 Proficiência dos estudantes (junção 2 relações)")
     corte = st.slider("Proficiência mínima (theta TRI)", -4.0, 2.5, 1.5, step=0.1)
     sql = ("SELECT E.CO_ESTUDANTE, N.PROFICIENCIA FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA WHERE N.PROFICIENCIA > ? "
@@ -114,7 +114,7 @@ elif pagina.startswith("6.2.2"):
     st.dataframe(df, hide_index=True, use_container_width=True, height=360)
 
 elif pagina.startswith("6.2.3"):
-    st.subheader("6.2.3 — Curso × município (junção 2 relações)")
+    st.subheader("6.2.3 Curso × município (junção 2 relações)")
     st.write("Para cada curso, o município onde funciona.")
     sql = ("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO FROM Curso C "
            "JOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO ORDER BY M.NOME")
@@ -123,7 +123,7 @@ elif pagina.startswith("6.2.3"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.3.1"):
-    st.subheader("6.3.1 — Estudante × curso × IES (junção 3 relações)")
+    st.subheader("6.3.1 Estudante × curso × IES (junção 3 relações)")
     st.write("Para cada estudante, categoria administrativa e organização acadêmica da IES.")
     sql = ("SELECT E.CO_ESTUDANTE, I.CO_CATEGAD, I.CO_ORGACAD FROM Estudante E "
            "JOIN Curso C ON E.CO_CURSO = C.CO_CURSO JOIN IES I ON C.CO_IES = I.CO_IES")
@@ -140,7 +140,7 @@ elif pagina.startswith("6.3.1"):
 
 elif pagina.startswith("6.3.2"):
     st.divider()
-    st.subheader("6.3.2 — Nota geral por região (junção 5 relações)")
+    st.subheader("6.3.2 Nota geral por região (junção 5 relações)")
     sql = ("SELECT E.CO_ESTUDANTE, U.REGIAO, N.NT_GER FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA "
            "JOIN Curso C ON E.CO_CURSO = C.CO_CURSO "
@@ -153,7 +153,7 @@ elif pagina.startswith("6.3.2"):
     st.dataframe(df, hide_index=True, use_container_width=True, height=260)
 
 elif pagina.startswith("6.3.3"):
-    st.subheader("6.3.3 — Itens dos cadernos (junção 3 relações)")
+    st.subheader("6.3.3 Itens dos cadernos (junção 3 relações)")
     sql = ("SELECT CD.CO_CADERNO, I.CO_ITEM, CO.POSICAO, I.PARAMETRO_B "
            "FROM Caderno CD JOIN Composicao CO ON CD.CO_CADERNO = CO.CO_CADERNO "
            "JOIN Item_prova I ON CO.CO_ITEM = I.CO_ITEM ORDER BY CD.CO_CADERNO, CO.POSICAO")
@@ -162,7 +162,7 @@ elif pagina.startswith("6.3.3"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.4.1"):
-    st.subheader("6.4.1 — Estudantes por município (agregação sobre junção)")
+    st.subheader("6.4.1 Estudantes por município (agregação sobre junção)")
     sql = ("SELECT M.NOME AS MUNICIPIO, COUNT(E.CO_ESTUDANTE) AS TOTAL_ESTUDANTES "
            "FROM Municipio M JOIN Curso C ON M.CO_MUNICIPIO = C.CO_MUNICIPIO "
            "JOIN Estudante E ON C.CO_CURSO = E.CO_CURSO "
@@ -173,7 +173,7 @@ elif pagina.startswith("6.4.1"):
     st.dataframe(df, hide_index=True, use_container_width=True)
 
 elif pagina.startswith("6.4.2"):
-    st.subheader("6.4.2 — Proficiência média por região (agregação sobre junção)")
+    st.subheader("6.4.2 Proficiência média por região (agregação sobre junção)")
     sql = ("SELECT U.REGIAO, COUNT(E.CO_ESTUDANTE) AS TOTAL, "
            "ROUND(AVG(N.PROFICIENCIA),3) AS PROF_MEDIA FROM Estudante E "
            "JOIN Notas N ON E.CO_NOTA = N.CO_NOTA "
