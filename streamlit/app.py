@@ -36,16 +36,16 @@ with st.sidebar:
         "Seção",
         [
             "Visão geral",
-            "6.1.1 Notas altas (NT_GER)",
-            "6.1.2 Itens da prova (TRI)",
-            "6.2.1 Municípios por região",
-            "6.2.2 Proficiência",
-            "6.2.3 Curso × município",
-            "6.3.1 Estudante × IES",
-            "6.3.2 Nota geral por região",
-            "6.3.3 Itens dos cadernos",
-            "6.4.1 Estudantes por município",
-            "6.4.2 Proficiência por região",
+            "Notas altas (NT_GER)",
+            "Itens da prova (TRI)",
+            "Municípios por região",
+            "Proficiência",
+            "Curso × município",
+            "Estudante × IES",
+            "Nota geral por região",
+            "Itens dos cadernos",
+            "Estudantes por município",
+            "Proficiência por região",
         ],
     )
 
@@ -64,7 +64,7 @@ if pagina == "Visão geral":
     with c1:
         st.dataframe(cont, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.1.1"):
+elif pagina == "Notas altas (NT_GER)":
     st.subheader("Notas gerais altas")
     st.write("Participantes com nota geral (NT_GER) acima de um corte (seleção + projeção).")
     corte = st.slider("Nota geral mínima", 0, 100, 70, step=5)
@@ -81,7 +81,7 @@ elif pagina.startswith("6.1.1"):
         dist.index = dist.index.astype(str)
         st.bar_chart(dist, height=380)
 
-elif pagina.startswith("6.1.2"):
+elif pagina == "Itens da prova (TRI)":
     st.subheader("Itens da prova (parâmetros da TRI)")
     st.write("Itens mantidos no cálculo e mais fáceis (PARAMETRO_B < 0) — seleção com 2 condições.")
     so_mantidos = st.checkbox("Apenas itens mantidos (ITEM_MANTIDO = 1)", value=True)
@@ -93,7 +93,7 @@ elif pagina.startswith("6.1.2"):
     st.metric("Itens encontrados", len(df))
     st.dataframe(df, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.2.1"):
+elif pagina == "Municípios por região":
     st.subheader("Municípios por região (junção 2 relações)")
     regiao = st.selectbox("Região", ["Sudeste", "Sul", "Nordeste", "Norte", "Centro-Oeste"])
     sql = ("SELECT M.NOME AS MUNICIPIO, U.NOME AS UF, U.REGIAO "
@@ -102,7 +102,7 @@ elif pagina.startswith("6.2.1"):
     mostra_sql(f"SELECT M.NOME AS MUNICIPIO, U.NOME AS UF, U.REGIAO\nFROM Municipio M\nJOIN UF U ON M.CO_UF = U.CO_UF\nWHERE U.REGIAO = '{regiao}';")
     st.dataframe(df, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.2.2"):
+elif pagina == "Proficiência":
     st.subheader("Proficiência dos estudantes (junção 2 relações)")
     corte = st.slider("Proficiência mínima (theta TRI)", -4.0, 2.5, 1.5, step=0.1)
     sql = ("SELECT E.CO_ESTUDANTE, N.PROFICIENCIA FROM Estudante E "
@@ -113,7 +113,7 @@ elif pagina.startswith("6.2.2"):
     st.metric("Estudantes acima do corte", len(df))
     st.dataframe(df, hide_index=True, use_container_width=True, height=360)
 
-elif pagina.startswith("6.2.3"):
+elif pagina == "Curso × município":
     st.subheader("Curso × município (junção 2 relações)")
     st.write("Para cada curso, o município onde funciona.")
     sql = ("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO FROM Curso C "
@@ -122,7 +122,7 @@ elif pagina.startswith("6.2.3"):
     mostra_sql("SELECT C.CO_CURSO, M.NOME AS MUNICIPIO\nFROM Curso C\nJOIN Municipio M ON C.CO_MUNICIPIO = M.CO_MUNICIPIO\nORDER BY M.NOME;")
     st.dataframe(df, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.3.1"):
+elif pagina == "Estudante × IES":
     st.subheader("Estudante × curso × IES (junção 3 relações)")
     st.write("Para cada estudante, categoria administrativa e organização acadêmica da IES.")
     sql = ("SELECT E.CO_ESTUDANTE, I.CO_CATEGAD, I.CO_ORGACAD FROM Estudante E "
@@ -138,7 +138,7 @@ elif pagina.startswith("6.3.1"):
         st.bar_chart(df["CO_ORGACAD"].value_counts().sort_index())
     st.dataframe(df, hide_index=True, use_container_width=True, height=300)
 
-elif pagina.startswith("6.3.2"):
+elif pagina == "Nota geral por região":
     st.divider()
     st.subheader("Nota geral por região (junção 5 relações)")
     sql = ("SELECT E.CO_ESTUDANTE, U.REGIAO, N.NT_GER FROM Estudante E "
@@ -152,7 +152,7 @@ elif pagina.startswith("6.3.2"):
     st.bar_chart(pivot, height=380)
     st.dataframe(df, hide_index=True, use_container_width=True, height=260)
 
-elif pagina.startswith("6.3.3"):
+elif pagina == "Itens dos cadernos":
     st.subheader("Itens dos cadernos (junção 3 relações)")
     sql = ("SELECT CD.CO_CADERNO, I.CO_ITEM, CO.POSICAO, I.PARAMETRO_B "
            "FROM Caderno CD JOIN Composicao CO ON CD.CO_CADERNO = CO.CO_CADERNO "
@@ -161,7 +161,7 @@ elif pagina.startswith("6.3.3"):
     mostra_sql("SELECT CD.CO_CADERNO, I.CO_ITEM, CO.POSICAO, I.PARAMETRO_B\nFROM Caderno CD\nJOIN Composicao CO ON CD.CO_CADERNO = CO.CO_CADERNO\nJOIN Item_prova I ON CO.CO_ITEM = I.CO_ITEM\nORDER BY CD.CO_CADERNO, CO.POSICAO;")
     st.dataframe(df, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.4.1"):
+elif pagina == "Estudantes por município":
     st.subheader("Estudantes por município (agregação sobre junção)")
     sql = ("SELECT M.NOME AS MUNICIPIO, COUNT(E.CO_ESTUDANTE) AS TOTAL_ESTUDANTES "
            "FROM Municipio M JOIN Curso C ON M.CO_MUNICIPIO = C.CO_MUNICIPIO "
@@ -172,7 +172,7 @@ elif pagina.startswith("6.4.1"):
     st.bar_chart(df.set_index("MUNICIPIO"), height=400)
     st.dataframe(df, hide_index=True, use_container_width=True)
 
-elif pagina.startswith("6.4.2"):
+elif pagina == "Proficiência por região":
     st.subheader("Proficiência média por região (agregação sobre junção)")
     sql = ("SELECT U.REGIAO, COUNT(E.CO_ESTUDANTE) AS TOTAL, "
            "ROUND(AVG(N.PROFICIENCIA),3) AS PROF_MEDIA FROM Estudante E "
