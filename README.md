@@ -6,6 +6,14 @@ Modelagem, povoamento e análise de um banco de dados relacional construído
 a partir dos microdados do Enamed 2025 (Exame Nacional de Avaliação da
 Formação Médica), divulgados pelo INEP em janeiro de 2026.
 
+## App online
+
+App interativo com as consultas rodando sobre os dados reais do Enamed 2025:
+
+**https://tp-bd-enamed-dc011.streamlit.app/**
+
+<img src="docs/qr_streamlit.png" alt="QR code do app" width="200">
+
 ## Equipe
 
 - Marco Fabian Alves Lopes Freire
@@ -92,6 +100,7 @@ sqlite3 data/processed/enamed.db < sql/consultas_parcial.sql
 
 ## Links úteis
 
+- [App Streamlit (online)](https://tp-bd-enamed-dc011.streamlit.app/)
 - [Portal de Dados Abertos do INEP - Enamed](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enamed)
 - [Manual do Usuário do Enamed 2025](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enamed)
 - [dbdiagram.io](https://dbdiagram.io) - desenho de ER/relacional
